@@ -118,17 +118,17 @@ async function generateContent(prompt) {
 // Helper function to generate vocabulary
 async function generateVocabulary(purpose, language) {
   try {
-    const prompt = `As a language learning assistant, create a list of 10 essential ${language} vocabulary words that would be useful for "${purpose}". 
-For each word:
-- Choose commonly used words or phrases
-- Include both basic and intermediate level terms
-- Provide accurate translations
-- Focus on practical, everyday usage
+    const prompt = `As a language learning assistant, create a list of 10 essential ${language} vocabulary words that would be useful for "${purpose}".
+Write each word in this exact format, one per line:
+word/phrase - translation
 
-Format each line exactly as: "word/phrase - translation"
-Example format:
+For example:
 good morning - chào buổi sáng
-thank you - cảm ơn`;
+thank you - cảm ơn
+
+The words should be commonly used, mix of basic and intermediate terms, with accurate translations, focusing on practical usage.
+
+Please write the list now:`;
 
     const result = await generateContent(prompt);
 
@@ -161,16 +161,16 @@ thank you - cảm ơn`;
 async function generatePhrases(purpose, language) {
   try {
     const prompt = `As a language learning assistant, create 9 useful ${language} phrases that would be essential for "${purpose}".
-For each phrase:
-- Include common expressions and sentences used in real conversations
-- Mix of formal and informal phrases where appropriate
-- Provide natural, conversational translations
-- Focus on practical dialogue that learners can use immediately
+Write each phrase in this exact format, one per line:
+phrase - translation
 
-Format each line exactly as: "phrase - translation"
-Example format:
+For example:
 Could you help me with this? - Bạn có thể giúp tôi việc này không?
-I don't understand - Tôi không hiểu`;
+I don't understand - Tôi không hiểu
+
+The phrases should include common expressions used in real conversations, both formal and informal, with natural translations, focusing on practical dialogue.
+
+Please write the list now:`;
 
     const result = await generateContent(prompt);
 
@@ -202,17 +202,19 @@ I don't understand - Tôi không hiểu`;
 // Helper function to generate tips
 async function generateTips(purpose, language) {
   try {
-    const prompt = `As a language learning assistant, provide 3 important language learning tips for studying ${language} specifically for "${purpose}".
-For each tip:
-- Focus on practical learning strategies
-- Include cultural context where relevant
-- Provide specific examples or scenarios
-- Address common challenges learners might face
+    const prompt = `As a language learning assistant, provide 3 important ${language} learning tips for studying the topic "${purpose}".
+Write each tip in this exact format, one per line, using ${language} for both the title and description:
+Title: Description
 
-Format each tip exactly as "Title: Description"
-Example format:
-Practice Active Listening: Focus on understanding native speakers in real conversations rather than just memorizing phrases.
-Cultural Context: Learn about the cultural norms and expectations in business settings to communicate more effectively.`;
+For example (in English):
+Pronunciation Practice: Focus on mastering the correct sounds and intonation patterns.
+Vocabulary Building: Learn words in context rather than memorizing isolated terms.
+
+The tips should focus on practical learning strategies, include cultural context, provide specific examples, and address common challenges.
+
+Important: Both the title and description must be in ${language}.
+
+Please write the tips now:`;
 
     const result = await generateContent(prompt);
 

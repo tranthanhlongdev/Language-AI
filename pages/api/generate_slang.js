@@ -1,184 +1,207 @@
-import cors from "cors";
-import ModelManager from "../../utils/model";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// CORS middleware
-const corsMiddleware = cors({
-  origin: ["http://localhost:3001"],
-  methods: ["GET", "POST", "OPTIONS"],
-  credentials: true,
-  optionsSuccessStatus: 200,
-});
+// Danh sách các tình huống giao tiếp phổ biến
+const CONVERSATION_CONTEXTS = [
+  "at a coffee shop",
+  "in a restaurant",
+  "at the airport",
+  "shopping at a mall",
+  "at a party",
+  "in a business meeting",
+  "at the doctor's office",
+  "at the gym",
+  "on public transport",
+  "at a hotel",
+  "at the bank",
+  "in a job interview",
+  "at a movie theater",
+  "at a grocery store",
+  "making small talk with neighbors",
+];
 
-// Helper function to wrap API handler with CORS
-function withCors(handler) {
-  return async (req, res) => {
-    return new Promise((resolve, reject) => {
-      corsMiddleware(req, res, async (result) => {
-        if (result instanceof Error) {
-          return reject(result);
-        }
+// Cấu hình cho Gemini API
+const generationConfig = {
+  temperature: 0.8,
+  topK: 40,
+  topP: 0.95,
+  maxOutputTokens: 1024,
+};
 
-        // Handle preflight request
-        if (req.method === "OPTIONS") {
-          res.status(200).end();
-          return resolve();
-        }
-
-        return resolve(handler(req, res));
-      });
-    });
-  };
+// Khởi tạo Gemini client
+let genAI;
+try {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY is not set in environment variables");
+  }
+  genAI = new GoogleGenerativeAI(apiKey);
+  console.log("Gemini client initialized successfully");
+} catch (error) {
+  console.error("Error initializing Gemini:", error);
 }
 
-export default withCors(async function handler(req, res) {
+// Hàm tạo nội dung sử dụng Gemini
+async function generateConversation(context, level = "intermediate") {
+  try {
+    if (!genAI) {
+      throw new Error("Gemini client not initialized");
+    }
+
+    const model = genAI.getGenerativeModel({
+      model: "gemini-pro",
+      ...generationConfig,
+    });
+
+    const prompt = `Create an engaging English conversation for ${level} level learners in a "${context}" setting.
+
+Requirements:
+1. Create a natural dialogue between two people (Alex and Sarah)
+2. Include 4-6 exchanges
+3. Use common expressions and idioms appropriate for the context
+4. Include some slang or informal expressions that are frequently used
+5. Focus on practical, everyday English that learners would actually use
+
+The response must be in this exact JSON format:
+{
+  "title": "A brief title for the conversation",
+  "context": "Brief description of the situation and setting (1-2 sentences)",
+  "level": "${level}",
+  "conversation": [
+    {
+      "speaker": "Alex/Sarah",
+      "text": "The dialogue text",
+      "notes": "Optional explanation of any idioms or expressions used"
+    }
+  ],
+  "vocabulary": [
+    {
+      "term": "word or phrase used",
+      "meaning": "clear definition",
+      "example": "another example usage"
+    }
+  ],
+  "keyPhrases": [
+    {
+      "phrase": "useful phrase from the dialogue",
+      "usage": "when/how to use this phrase",
+      "alternatives": ["other similar expressions"]
+    }
+  ],
+  "culturalNotes": "Brief cultural context or usage notes relevant to the conversation"
+}
+
+Make sure:
+- The conversation flows naturally
+- Include at least 3 useful vocabulary items or expressions
+- Explain any slang or informal expressions
+- Keep the language authentic but appropriate for learning
+- Add relevant cultural context when applicable`;
+
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+    });
+
+    if (!result.response) {
+      throw new Error("No response from Gemini");
+    }
+
+    const text = result.response.text();
+    if (!text) {
+      throw new Error("Empty response from Gemini");
+    }
+
+    // Parse and validate the response
+    let parsedResponse;
+    try {
+      parsedResponse = JSON.parse(text);
+
+      // Validate required fields
+      const requiredFields = [
+        "title",
+        "context",
+        "conversation",
+        "vocabulary",
+        "keyPhrases",
+      ];
+      for (const field of requiredFields) {
+        if (!parsedResponse[field]) {
+          throw new Error(`Missing required field: ${field}`);
+        }
+      }
+
+      // Validate conversation structure
+      if (
+        !Array.isArray(parsedResponse.conversation) ||
+        parsedResponse.conversation.length < 1
+      ) {
+        throw new Error("Invalid conversation format");
+      }
+    } catch (parseError) {
+      console.error("Error parsing response:", parseError);
+      throw new Error("Failed to generate valid conversation format");
+    }
+
+    return parsedResponse;
+  } catch (error) {
+    console.error("Error generating conversation:", error);
+    throw error;
+  }
+}
+
+// Next.js API route handler
+export default async function handler(req, res) {
+  // Set CORS headers
+  res.setHeader("Access-Control-Allow-Credentials", true);
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
+  );
+
+  // Handle OPTIONS request
+  if (req.method === "OPTIONS") {
+    res.status(200).end();
+    return;
+  }
+
+  // Only allow POST requests
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
-    const { context } = req.body;
+    // Get parameters from request body or use defaults
+    const {
+      context = CONVERSATION_CONTEXTS[
+        Math.floor(Math.random() * CONVERSATION_CONTEXTS.length)
+      ],
+      level = "intermediate",
+    } = req.body;
 
-    if (!context) {
-      return res.status(400).json({ error: "Context is required" });
+    // Validate level
+    const validLevels = ["beginner", "intermediate", "advanced"];
+    if (!validLevels.includes(level.toLowerCase())) {
+      return res.status(400).json({
+        error: "Invalid level",
+        message: "Level must be one of: beginner, intermediate, advanced",
+      });
     }
 
-    if (typeof context !== "string" || context.length > 100) {
-      return res
-        .status(400)
-        .json({ error: "Invalid context format or length" });
-    }
+    // Generate conversation
+    const conversation = await generateConversation(context, level);
 
-    // Get model instance
-    const modelManager = await ModelManager.getInstance();
-
-    // Generate slang conversation
-    const slangPrompt = `A casual conversation with slang about ${context}:\nPerson 1: Hey, what's up?`;
-    const slangText = await modelManager.generateText(slangPrompt, {
-      max_new_tokens: 250,
-      temperature: 0.9,
-      top_k: 50,
-      top_p: 0.95,
-    });
-
-    // Process the slang conversation
-    const slangConversation = processSlangConversation(slangText);
-
-    // Generate slang explanations
-    const explanationPrompt = `Explanation of slang terms in the conversation about ${context}:\n`;
-    const explanationText = await modelManager.generateText(explanationPrompt, {
-      max_new_tokens: 150,
-      temperature: 0.7,
-    });
-
-    // Process the explanations
-    const slangExplanations = processExplanations(explanationText);
-
-    // Validate the generated content
-    if (!slangConversation.length || !slangExplanations.length) {
-      throw new Error("Failed to generate valid content");
-    }
-
+    // Return success response
     return res.status(200).json({
-      context,
-      conversation: slangConversation,
-      explanations: slangExplanations,
+      success: true,
+      data: conversation,
     });
   } catch (error) {
-    console.error("Error generating slang conversation:", error);
+    console.error("API Error:", error);
     return res.status(500).json({
-      error: "Failed to generate slang conversation",
+      success: false,
+      error: "Failed to generate conversation",
       message: error.message,
     });
-  }
-});
-
-// Helper function to process the generated slang conversation
-function processSlangConversation(text) {
-  try {
-    // Extract the conversation part
-    const conversationPart = text.replace(
-      /A casual conversation with slang about .*?:\n/i,
-      ""
-    );
-
-    // Format the conversation for better readability
-    const cleanedConversation = conversationPart
-      .replace(/Person \d+:|Person A:|Person B:/g, (match) => `\n${match}`)
-      .trim();
-
-    // Split into conversation turns and clean up
-    const turns = cleanedConversation
-      .split("\n")
-      .filter((line) => line.trim().length > 0)
-      .map((line) => {
-        // If line doesn't start with a person identifier, add one
-        if (!line.match(/^Person \d+:|^Person [AB]:/)) {
-          return `Person ${(turns.length % 2) + 1}: ${line}`;
-        }
-        return line;
-      })
-      .slice(0, 8); // Limit to 8 turns for readability
-
-    return turns.length > 0
-      ? turns
-      : ["Person 1: Hey, what's up?", "Person 2: Not much, just chillin'."];
-  } catch (error) {
-    console.error("Error processing conversation:", error);
-    return [
-      "Person 1: [Error generating conversation]",
-      "Person 2: Let's try again later.",
-    ];
-  }
-}
-
-// Helper function to extract and process slang explanations
-function processExplanations(text) {
-  try {
-    // Extract the explanation part
-    const explanationPart = text.replace(
-      /Explanation of slang terms in the conversation about .*?:\n/i,
-      ""
-    );
-
-    // Try to find terms with explanations (looking for patterns like "term - explanation")
-    const explanations = explanationPart
-      .split("\n")
-      .filter((line) => line.includes("-") || line.includes(":"))
-      .map((line) => {
-        const parts = line.split(/[-:]/);
-        if (parts.length >= 2) {
-          return {
-            term: parts[0].trim(),
-            meaning: parts.slice(1).join(":").trim(),
-          };
-        }
-        return null;
-      })
-      .filter(Boolean)
-      .slice(0, 5); // Limit to 5 explanations
-
-    // If no structured explanations found, create generic ones
-    if (explanations.length === 0) {
-      return [
-        {
-          term: "what's up",
-          meaning: "A greeting asking how someone is doing",
-        },
-        { term: "cool", meaning: "Good, great, or awesome" },
-        { term: "hang out", meaning: "To spend time together casually" },
-        { term: "chill", meaning: "To relax or something that's relaxed" },
-      ];
-    }
-
-    return explanations;
-  } catch (error) {
-    console.error("Error processing explanations:", error);
-    return [
-      { term: "Error", meaning: "Failed to generate slang explanations" },
-      {
-        term: "Try Again",
-        meaning: "Please try generating the conversation again",
-      },
-    ];
   }
 }

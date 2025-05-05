@@ -18,18 +18,28 @@ const ActionButton = ({ icon }) => (
 );
 
 const ContentSection = ({ items, itemsPerPage = 4, renderItem }) => {
-  const [showMore, setShowMore] = useState(false);
-  const displayItems = showMore
-    ? items.slice(0, itemsPerPage * 2)
-    : items.slice(0, itemsPerPage);
-  const hasMore = items.length > displayItems.length;
+  const [displayCount, setDisplayCount] = useState(itemsPerPage);
+
+  const handleShowMore = () => {
+    if (displayCount === itemsPerPage) {
+      setDisplayCount(8); // Show 8 items on first click
+    } else if (displayCount === 8) {
+      setDisplayCount(10); // Show all 10 items on second click
+    } else {
+      setDisplayCount(itemsPerPage); // Reset to initial 4 items
+    }
+  };
+
+  const displayItems = items.slice(0, displayCount);
+  const hasMore = items.length > displayCount;
+  const isShowingAll = displayCount === 10;
 
   return (
     <>
       {displayItems.map(renderItem)}
-      {hasMore && (
-        <button className="see-more" onClick={() => setShowMore(!showMore)}>
-          {showMore ? "Show less" : "See more"}
+      {(hasMore || isShowingAll) && (
+        <button className="see-more" onClick={handleShowMore}>
+          {isShowingAll ? "Show less" : "See more"}
         </button>
       )}
     </>
