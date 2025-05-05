@@ -1,82 +1,185 @@
-# Language Learning App
+# English Learning Conversation App
 
-A web application similar to Google's Little Language Lessons, built with Next.js (backend) and React (frontend).
+An interactive web application for learning English through AI-generated conversations, powered by Next.js and Google's Gemini AI.
 
-## Features
+## 🌟 Features
 
-1. **Tiny Lesson**: Generate personalized English lessons with vocabulary, grammar, and dialogues based on user-specified topics.
-2. **Slang Hang**: Generate slang conversations and explanations based on user-specified contexts.
+### 1. Dynamic Conversation Generation
 
-## Technology Stack
+- Generate natural English conversations for different scenarios
+- Multiple difficulty levels (beginner, intermediate, advanced)
+- Real-world context and situations
+- Common slang and idioms with explanations
 
-- **Backend**: Next.js (API Routes), Transformers.js (GPT-2)
-- **Frontend**: React, Axios
+### 2. Learning Components
 
-## Project Structure
+- Detailed vocabulary explanations
+- Key phrases and their usage
+- Cultural context notes
+- Alternative expressions
+- Practice scenarios
+
+### 3. Conversation Contexts
+
+- Coffee shops and restaurants
+- Business meetings
+- Travel situations
+- Shopping and retail
+- Social gatherings
+- Healthcare settings
+- And many more...
+
+## 🛠 Technology Stack
+
+### Backend
+
+- **Next.js** - Server and API routes
+- **Google Gemini AI** - Conversation generation
+- **Node.js** - Runtime environment
+
+### Frontend
+
+- **React** - UI components
+- **CSS Modules** - Styling
+- **Axios** - API communication
+
+## 📁 Project Structure
 
 ```
 .
-├── package.json              # Backend dependencies
 ├── pages/                    # Next.js pages
-│   └── api/                  # API endpoints
-│       ├── get_lesson.js     # Tiny Lesson API
-│       └── generate_slang.js # Slang Hang API
-└── frontend/                 # React frontend
-    ├── package.json
-    ├── public/
-    │   └── index.html
-    └── src/
-        ├── App.js
-        ├── App.css
-        ├── index.js
-        ├── index.css
-        └── components/
-            ├── LessonComponent.js
-            ├── LessonComponent.css
-            ├── SlangComponent.js
-            └── SlangComponent.css
+│   ├── api/                  # API endpoints
+│   │   └── generate_slang.js # Conversation generation API
+│   └── index.js             # Main page
+├── components/              # React components
+│   ├── ConversationDisplay/
+│   ├── VocabularyList/
+│   └── ContextSelector/
+├── styles/                  # CSS modules
+├── public/                  # Static assets
+└── utils/                   # Utility functions
 ```
 
-## How to Run
+## 🚀 Getting Started
 
-### Backend (Next.js)
+### Prerequisites
 
-1. Install dependencies:
+- Node.js (v14 or higher)
+- npm or yarn
+- Google Gemini API key
 
-   ```
-   npm install
-   ```
+### Installation
 
-2. Start the development server:
+1. Clone the repository:
 
-   ```
-   npm run dev
-   ```
-
-   The backend server will run on http://localhost:3000.
-
-### Frontend (React)
-
-1. Navigate to the frontend directory:
-
-   ```
-   cd frontend
+   ```bash
+   git clone <repository-url>
+   cd english-learning-app
    ```
 
 2. Install dependencies:
 
-   ```
+   ```bash
    npm install
    ```
 
-3. Start the development server:
+3. Set up environment variables:
+   Create a `.env.local` file in the root directory:
 
+   ```env
+   GEMINI_API_KEY=your_api_key_here
    ```
-   npm start
+
+4. Start the development server:
+
+   ```bash
+   npm run dev
    ```
 
-   The frontend will run on http://localhost:3001.
+   The application will be available at `http://localhost:3000`
 
-## Note
+## 📝 API Usage
 
-The application uses GPT-2 via the Transformers.js library to generate lessons and slang conversations. First-time loading might take some time as the model needs to be downloaded.
+### Generate Conversation
+
+```http
+POST /api/generate_slang
+Content-Type: application/json
+
+{
+    "context": "at a coffee shop",
+    "level": "intermediate"
+}
+```
+
+#### Response Format
+
+```json
+{
+  "success": true,
+  "data": {
+    "title": "String",
+    "context": "String",
+    "level": "String",
+    "conversation": [
+      {
+        "speaker": "String",
+        "text": "String",
+        "notes": "String"
+      }
+    ],
+    "vocabulary": [
+      {
+        "term": "String",
+        "meaning": "String",
+        "example": "String"
+      }
+    ],
+    "keyPhrases": [
+      {
+        "phrase": "String",
+        "usage": "String",
+        "alternatives": ["String"]
+      }
+    ],
+    "culturalNotes": "String"
+  }
+}
+```
+
+## 🔧 Configuration
+
+### Available Conversation Contexts
+
+- Coffee shops
+- Restaurants
+- Airports
+- Shopping malls
+- Business meetings
+- Doctor's office
+- Public transport
+- And more...
+
+### Difficulty Levels
+
+- **Beginner**: Basic vocabulary and simple expressions
+- **Intermediate**: Common idioms and casual expressions
+- **Advanced**: Complex vocabulary, slang, and cultural nuances
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Google Gemini AI for powering the conversation generation
+- Next.js team for the amazing framework
+- All contributors and users of this application
