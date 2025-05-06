@@ -183,3 +183,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Google Gemini AI for powering the conversation generation
 - Next.js team for the amazing framework
 - All contributors and users of this application
+  -- add
